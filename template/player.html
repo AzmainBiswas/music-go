@@ -1,0 +1,14 @@
+{{ define "music-details"}}
+<div class="album-art">
+    <img src="/albumArt?music-path={{ .Song.Path }}" alt="Album Art" />
+</div>
+<div class="song-info">
+    <div class="song-name">{{ .Song.Title }}</div>
+    <div class="song-album">{{ .Song.Album }}</div>
+    <div class="song-artists">
+        {{ range .Song.Artists }}
+        <div class="song-artist">{{ . }}</div>
+        {{ end }}
+    </div>
+</div>
+{{end}}

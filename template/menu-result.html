@@ -1,0 +1,123 @@
+{{ define "musicsList" }} {{ range .Songs }}
+<div class="music">
+    <!-- TODOOO: Handle resate queue or new equue on click -->
+    <div
+        class="name"
+        hx-get="/song/details?id={{ .Id }}&toPlay=true"
+        hx-target="#music-details"
+        hx-swap="innerHTML"
+        hx-trigger="click"
+        onclick="playSong('{{ .Path }}')"
+    >
+        {{ .Title }}
+    </div>
+    <div class="details">
+        <div class="artists">
+            {{ range .Artists }}
+            <div class="artist">{{ . }}</div>
+            {{ else }}
+            <div class="error">No Artists Found</div>
+            {{ end }}
+        </div>
+        <div class="album">{{ .Album }}</div>
+    </div>
+</div>
+{{ else }}
+<div class="error">No Music Found</div>
+{{ end }} {{ end}}
+
+<!-- menu result musics -->
+{{ define "musics" }}
+<div id="menu-result">
+    <div class="songs-list">{{ template "musicsList" . }}</div>
+</div>
+{{ end }}
+
+<!-- menu result albums -->
+{{ define "albums" }}
+<div id="menu-result">
+    <div class="albums-list">
+        {{ range .Albums }}
+        <div
+            class="album"
+            hx-get="/songs/by-album/{{ .Name }}"
+            hx-target="#menu-result"
+            hx-swap="outerHTML"
+        >
+            <div class="name">{{ .Name }}</div>
+            <div class="artist">{{ .Artist }}</div>
+            <div class="song-count">{{ .SongsCount }}</div>
+        </div>
+        {{ else }}
+        <div class="err">No Album Found</div>
+        {{ end }}
+    </div>
+</div>
+{{ end }}
+
+<!-- menu result artists -->
+{{ define "artists" }}
+<div id="menu-result">
+    <div class="artists-list">
+        {{ range .Artists }}
+        <div
+            class="artist"
+            hx-get="/songs/by-artist-id/{{ .ID }}?name={{ .Name }}"
+            hx-target="#menu-result"
+            hx-swap="outerHTML"
+        >
+            <div class="name">{{ .Name }}</div>
+            <div class="song-count">{{ .SongsCount }}</div>
+        </div>
+        {{ else }}
+        <div class="error">No Artist Found</div>
+        {{ end }}
+    </div>
+</div>
+{{ end }}
+
+<!-- artists songs -->
+{{ define "artist-songs"}}
+<div id="menu-result">
+    <div class="artist-songs">
+        <div class="artist-name">
+            <h1>{{ .ArtistName }}</h1>
+            <button
+                class="play-all-button"
+                title="Play All Songs From {{ .ArtistName }}"
+                data-id="{{ .ArtistID }}"
+                onclick='playAll("artist", this.dataset.id)'
+            >
+                Play all
+            </button>
+        </div>
+        <div class="songs-list">{{ template "musicsList" . }}</div>
+    </div>
+</div>
+{{ end }}
+
+<!-- albums songs -->
+{{ define "album-songs"}}
+<div id="menu-result">
+    <div class="album-songs">
+        <div class="album-info">
+            <div class="album-name">
+                <img
+                    src="/albumArt?music-path={{ .AlbumArtPath }}"
+                    alt="{{ .AlbumName }} Album Art"
+                />
+                <h1>{{ .AlbumName }}</h1>
+            </div>
+            <button
+                class="play-all-button"
+                title="Play All Songs From {{ .AlbumName }}"
+                data-album="{{ .AlbumName }}"
+                onclick='playAll("album", this.dataset.album)'
+            >
+                Play all
+            </button>
+        </div>
+        <div class="songs-list">{{ template "musicsList" . }}</div>
+    </div>
+</div>
+{{ end }}

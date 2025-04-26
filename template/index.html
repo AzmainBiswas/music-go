@@ -1,0 +1,262 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script src="static/htmx.min.js"></script>
+        <script src="static/main.js"></script>
+        <script src="static/main.js"></script>
+        <link rel="stylesheet" href="static/style.css" />
+        <title>GO Music App</title>
+    </head>
+
+    <body>
+        <!-- nav bar -->
+        <nav>
+            <div class="logo">
+                <a href="/">Go Music</a>
+            </div>
+
+            <div class="nav-menu">
+                <a
+                    hx-get="/songs"
+                    hx-swap="outerHTML"
+                    hx-target="#menu-result"
+                    hx-trigger="load once, click"
+                    >Songs</a
+                >
+                <a
+                    hx-get="/artists"
+                    hx-swap="outerHTML"
+                    hx-target="#menu-result"
+                    >Artists</a
+                >
+                <a hx-get="/albums" hx-swap="outerHTML" hx-target="#menu-result"
+                    >Albums</a
+                >
+                <a
+                    hx-get="/playlists"
+                    hx-swap="outerHTML"
+                    hx-target="#menu-result"
+                    >Playlists</a
+                >
+                <a hx-get="/search" hx-swap="outerHTML" hx-target="#menu-result"
+                    >Search</a
+                >
+            </div>
+        </nav>
+
+        <!-- Content to demonstrate scrolling -->
+        <div id="app-body">
+            <div id="menu-result"></div>
+
+            <div id="player">
+                <div id="music-details"></div>
+
+                <div id="music-controlers">
+                    <div class="controls">
+                        <button class="control-btn" title="Shuffle">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                stroke="gray"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polyline points="16 3 21 3 21 8"></polyline>
+                                <line x1="4" y1="20" x2="21" y2="3"></line>
+                                <polyline points="21 16 21 21 16 21"></polyline>
+                                <line x1="15" y1="15" x2="21" y2="21"></line>
+                                <line x1="4" y1="4" x2="9" y2="9"></line>
+                            </svg>
+                        </button>
+                        <button
+                            class="control-btn"
+                            title="Previous"
+                            onclick="playPreviousSong()"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                stroke="gray"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polygon
+                                    points="19 20 9 12 19 4 19 20"
+                                ></polygon>
+                                <line x1="5" y1="19" x2="5" y2="5"></line>
+                            </svg>
+                        </button>
+                        <button
+                            class="control-btn"
+                            title="Play/Pause"
+                            onclick="togglePlay()"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="50"
+                                height="50"
+                                fill="white"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle cx="12" cy="12" r="10" fill="white" />
+                                <polygon
+                                    points="10,8 16,12 10,16"
+                                    fill="black"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            class="control-btn"
+                            title="Next"
+                            onclick="playNextSong()"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                stroke="gray"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                                <line x1="19" y1="5" x2="19" y2="19"></line>
+                            </svg>
+                        </button>
+                        <button
+                            class="control-btn"
+                            title="Loop"
+                            onclick="toggleLoop()"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="-1 -1 26 26"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                stroke="gray"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <polyline points="17 1 21 5 17 9"></polyline>
+                                <path d="M3 11V9a4 4 0 014-4h14"></path>
+                                <polyline points="7 23 3 19 7 15"></polyline>
+                                <path d="M21 13v2a4 4 0 01-4 4H3"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="progress-info">
+                        <div id="current-time">0:00</div>
+                        <div class="progress-bar">
+                            <input type="range" id="progress" value="0" />
+                        </div>
+                        <div id="duration">0:00</div>
+                    </div>
+                </div>
+
+                <div id="volume-info">
+                    <input
+                        type="checkbox"
+                        id="mute-toggle"
+                        title="Mute / Unmute"
+                        onclick="toggleMute()"
+                        hidden
+                    />
+                    <label for="mute-toggle" id="mute-toggle-lable">
+                        <div class="mute-toggle-icon">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                stroke="gray"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                viewBox="0 0 24 24"
+                            >
+                                <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                                <path d="M15.54 8.46a5 5 0 010 7.07"></path>
+                                <path d="M19.07 4.93a9 9 0 010 12.73"></path>
+                            </svg>
+                        </div>
+                    </label>
+                    <input
+                        type="range"
+                        id="volume-bar"
+                        min="0"
+                        max="100"
+                        value="100"
+                        onchange="adjustVolume(this.value)"
+                    />
+                    <div id="volume-value">100%</div>
+                </div>
+            </div>
+
+            <!-- audio element -->
+            <audio id="audio" onloadedmetadata="onAudioLoadMetadata(this)">
+                <source id="source" src="" type="audio/mpeg" />
+                browser does not support audio
+            </audio>
+
+            <script>
+                const audio = document.getElementById("audio");
+                const progress = document.getElementById("progress");
+                const currentTime = document.getElementById("current-time");
+                const volumeBar = document.getElementById("volume-bar");
+
+                document.addEventListener("keydown", (event) => {
+                    event.preventDefault();
+                    if (event.key === " ") {
+                        togglePlay();
+                    }
+                    if (event.key === "n" && event.shiftKey) {
+                        playNextSong();
+                    }
+                    if (event.key === "p" && event.shiftKey) {
+                        playPreviousSong();
+                    }
+                });
+
+                audio.addEventListener("timeupdate", () => {
+                    progress.value = audio.currentTime;
+                    currentTime.innerHTML = `${formatTime(audio.currentTime)}`;
+                });
+
+                audio.addEventListener("ended", playNextSong);
+
+                progress.addEventListener("input", () => {
+                    audio.currentTime = progress.value;
+                    currentTime.innerHTML = `${formatTime(audio.currentTime)}`;
+                });
+
+                volumeBar.addEventListener("wheel", (event) => {
+                    event.preventDefault(); // Prevent page scrolling
+                    const delta = Math.sign(event.deltaY); // Get scroll direction
+                    const step = 5; // Adjust volume change step
+                    let newValue = parseInt(volumeBar.value) - delta * step; // Calculate new value
+
+                    // Clamp value between min and max
+                    newValue = Math.max(
+                        volumeBar.min,
+                        Math.min(volumeBar.max, newValue),
+                    );
+
+                    volumeBar.value = newValue; // Update range input
+                    adjustVolume(newValue); // Call your existing volume adjustment function
+                });
+            </script>
+        </div>
+    </body>
+</html>
