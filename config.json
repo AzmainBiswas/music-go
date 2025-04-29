@@ -1,0 +1,13 @@
+{
+  "music_dir": "~/Music",
+  "database": {
+    "path": "./data"
+  },
+  "server": {
+    "port": 6969
+  },
+  "Log": {
+    "enable": true,
+    "log_destination": "both"
+  }
+}

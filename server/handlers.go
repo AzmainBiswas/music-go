@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"mime"
+	"music-go/database"
 	"music-go/musictag"
 	"net/http"
 	"os"
@@ -15,7 +16,7 @@ import (
 
 //TODOOOO: add request check to all handeler
 
-func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 	// TODO: for final product move it to Serve()
 	// loading all templates
 	err := s.LoadTemplates()
@@ -33,7 +34,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSongs(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleSongs(w http.ResponseWriter, r *http.Request) {
 	musics, err := s.db.GetAllMusics()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -42,7 +43,7 @@ func (s *Server) handleSongs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := struct {
-		Songs []Music
+		Songs []database.Music
 	}{
 		Songs: musics,
 	}
@@ -55,7 +56,7 @@ func (s *Server) handleSongs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleAlbums(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleAlbums(w http.ResponseWriter, r *http.Request) {
 	albums, err := s.db.GetAllAlbums()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,7 +65,7 @@ func (s *Server) handleAlbums(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := struct {
-		Albums []Album
+		Albums []database.Album
 	}{
 		Albums: albums,
 	}
@@ -77,7 +78,7 @@ func (s *Server) handleAlbums(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleArtists(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleArtists(w http.ResponseWriter, r *http.Request) {
 	artists, err := s.db.GetAllArtists()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -86,7 +87,7 @@ func (s *Server) handleArtists(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := struct {
-		Artists []Artist
+		Artists []database.Artist
 	}{
 		Artists: artists,
 	}
@@ -99,7 +100,7 @@ func (s *Server) handleArtists(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSongsByArtistID(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleSongsByArtistID(w http.ResponseWriter, r *http.Request) {
 	artistName := r.URL.Query().Get("name")
 	paths := strings.Split(r.URL.Path, "/")
 	if len(paths) < 4 || paths[2] != "by-artist-id" {
@@ -125,7 +126,7 @@ func (s *Server) handleSongsByArtistID(w http.ResponseWriter, r *http.Request) {
 	paylod := struct {
 		ArtistName string
 		ArtistID   int64
-		Songs      []Music
+		Songs      []database.Music
 	}{
 		ArtistName: artistName,
 		ArtistID:   artistID,
@@ -140,7 +141,7 @@ func (s *Server) handleSongsByArtistID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSongsByAlbum(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleSongsByAlbum(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.URL.Path, "/")
 	if len(paths) < 4 || paths[2] != "by-album" {
 		http.Error(w, "Wrong get request: path should be /songs/by-album/{album name}", http.StatusBadRequest)
@@ -158,7 +159,7 @@ func (s *Server) handleSongsByAlbum(w http.ResponseWriter, r *http.Request) {
 	paylod := struct {
 		AlbumName    string
 		AlbumArtPath string
-		Songs        []Music
+		Songs        []database.Music
 	}{
 		AlbumName:    albumName,
 		AlbumArtPath: songs[0].Path,
@@ -173,7 +174,7 @@ func (s *Server) handleSongsByAlbum(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSongDetails(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleSongDetails(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "url should be /song/details?id={{ .Id }} not "+r.URL.String(), http.StatusBadRequest)
@@ -192,7 +193,7 @@ func (s *Server) handleSongDetails(w http.ResponseWriter, r *http.Request) {
 	song, err := s.db.GetMusicBYID(songId)
 
 	paylod := struct {
-		Song *Music
+		Song *database.Music
 	}{
 		Song: song,
 	}
@@ -209,7 +210,7 @@ func (s *Server) handleSongDetails(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSongPlay(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleSongPlay(w http.ResponseWriter, r *http.Request) {
 	songPath := r.URL.Query().Get("music-path")
 
 	if songPath == "" {
@@ -239,7 +240,7 @@ func (s *Server) handleSongPlay(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, songPath)
 }
 
-func (s *Server) handleDisplayAlbumArt(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleDisplayAlbumArt(w http.ResponseWriter, r *http.Request) {
 	songPath := r.URL.Query().Get("music-path")
 	songFile, err := os.Open(songPath)
 	if err != nil {
@@ -261,9 +262,9 @@ func (s *Server) handleDisplayAlbumArt(w http.ResponseWriter, r *http.Request) {
 	w.Write(albumArt.Data)
 }
 
-func (s *Server) handleNextSong(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handleNextSong(w http.ResponseWriter, r *http.Request) {
 	var (
-		song   *Music
+		song   *database.Music
 		err    error
 		dberr  error
 		songId int64
@@ -311,7 +312,7 @@ func (s *Server) handleNextSong(w http.ResponseWriter, r *http.Request) {
 	w.Write(payloadJson)
 }
 
-func (s *Server) handlePreviousSong(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handlePreviousSong(w http.ResponseWriter, r *http.Request) {
 	if len(s.songsStack.array) < 2 {
 		http.Error(w, ErrEmptyStack.Error()+" Play more song", http.StatusInternalServerError)
 		log.Printf("ERROR: %s\n", ErrEmptyStack.Error())
@@ -349,7 +350,7 @@ func (s *Server) handlePreviousSong(w http.ResponseWriter, r *http.Request) {
 	w.Write(payloadJson)
 }
 
-func (s *Server) handlePlayAll(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) handlePlayAll(w http.ResponseWriter, r *http.Request) {
 	s.songQueue.Clear()
 
 	quaryType := r.URL.Query().Get("type")
@@ -360,7 +361,7 @@ func (s *Server) handlePlayAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var songs []Music
+	var songs []database.Music
 	var err error
 
 	switch quaryType {

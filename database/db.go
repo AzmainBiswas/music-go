@@ -1,11 +1,13 @@
-package server
+package database
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 	"music-go/musictag"
+	"music-go/utils"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -16,13 +18,16 @@ import (
 var artistSpLitter = regexp.MustCompile(`\s*(?:/|&|,)\s*`)
 
 type DataBase struct {
+	config   utils.Config
 	DB       *sql.DB
 	Location string
 }
 
 // open connection with the given database name.
 // close the database after use.
-func (d *DataBase) OpenConnection(path string) error {
+func (d *DataBase) OpenConnection(config utils.Config) error {
+	d.config = config
+	path := path.Join(d.config.Database.Path, "music.db")
 	d.Location = fmt.Sprintf("file:%s", path)
 	var err error
 	d.DB, err = sql.Open("libsql", d.Location)

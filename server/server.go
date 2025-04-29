@@ -4,22 +4,24 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"music-go/database"
+	"music-go/utils"
 	"net/http"
 )
 
-type Server struct {
-	db         DataBase
-	port       int
+type httpServer struct {
+	configs    utils.Config
+	db         database.DataBase
 	indexTmpl  *template.Template
 	resultTmpl *template.Template
 	songsStack Stack
 	songQueue  Queue
 }
 
-func NewServer(port int) *Server {
-	return &Server{
-		db:         DataBase{},
-		port:       port,
+func NewServer(config utils.Config) *httpServer {
+	return &httpServer{
+		configs:    config,
+		db:         database.DataBase{},
 		indexTmpl:  &template.Template{},
 		resultTmpl: &template.Template{},
 		songsStack: *NewStack(),
@@ -27,9 +29,9 @@ func NewServer(port int) *Server {
 	}
 }
 
-func (s *Server) Serve() error {
+func (s *httpServer) Serve() error {
 	//TODO: change path not more general position
-	s.db.OpenConnection("data/music.db")
+	s.db.OpenConnection(s.configs)
 	defer s.db.Close()
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -51,14 +53,14 @@ func (s *Server) Serve() error {
 	http.HandleFunc("/previous-song", s.handlePreviousSong)
 	http.HandleFunc("/play-all", s.handlePlayAll)
 
-	log.Printf("INFO: server is open on 127.0.0.1:%d", s.port)
-	fmt.Printf("INFO: server is open on 127.0.0.1:%d\n", s.port)
+	log.Printf("INFO: server is open on 127.0.0.1:%d", s.configs.Server.Port)
+	fmt.Printf("INFO: server is open on 127.0.0.1:%d\n", s.configs.Server.Port)
 
-	err := http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", s.configs.Server.Port), nil)
 	return err
 }
 
-func (s *Server) NotImplemented(w http.ResponseWriter, r *http.Request) {
+func (s *httpServer) NotImplemented(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte(`<div id="menu-result">Not Implemented yet</div>`))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -67,7 +69,7 @@ func (s *Server) NotImplemented(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) LoadTemplates() error {
+func (s *httpServer) LoadTemplates() error {
 	var err error
 	s.indexTmpl, err = template.ParseFiles("template/index.html")
 	if err != nil {

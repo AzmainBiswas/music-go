@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"music-go/server"
+	"music-go/utils"
 	"os"
 	"path/filepath"
 )
@@ -18,7 +19,8 @@ func main() {
 	// defer logFile.Close()
 	// log.SetOutput(logFile)
 
-	server := server.NewServer(6969)
+	cfg := utils.ReadConfig("config.json")
+	server := server.NewServer(*cfg)
 	log.Fatal(server.Serve())
 }
 
