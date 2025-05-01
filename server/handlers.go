@@ -17,16 +17,7 @@ import (
 //TODOOOO: add request check to all handeler
 
 func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
-	// TODO: for final product move it to Serve()
-	// loading all templates
-	err := s.LoadTemplates()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Printf("ERROR: %s", err.Error())
-		return
-	}
-
-	err = s.indexTmpl.Execute(w, nil)
+	err := s.indexTmpl.Execute(w, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Printf("ERROR: %s", err.Error())
@@ -102,17 +93,24 @@ func (s *httpServer) handleArtists(w http.ResponseWriter, r *http.Request) {
 
 func (s *httpServer) handleSongsByArtistID(w http.ResponseWriter, r *http.Request) {
 	artistName := r.URL.Query().Get("name")
-	paths := strings.Split(r.URL.Path, "/")
-	if len(paths) < 4 || paths[2] != "by-artist-id" {
-		http.Error(w, "Wrong get request: path should be /songs/by-artist-id/{id}", http.StatusBadRequest)
-		log.Printf("ERROR: Wrong get request: path should be /songs/by-artist-id/{id}\n")
+	urlPrefix := "/by-artist-id/"
+	if !strings.HasPrefix(r.URL.Path, urlPrefix) {
+		log.Printf("ERROR: prefix not found %s", urlPrefix)
+		http.NotFound(w, r)
 		return
 	}
 
-	artistID, err := strconv.ParseInt(paths[3], 10, 64)
+	artistIDstr := strings.TrimPrefix(r.URL.Path, urlPrefix)
+	if artistIDstr == "" || artistIDstr == "/" {
+		log.Printf("ERROR: Missing artist ID in URL %s", r.URL.String())
+		http.Error(w, "Bad Request: Artist ID required", http.StatusBadRequest)
+		return
+	}
+
+	artistID, err := strconv.ParseInt(artistIDstr, 10, 64)
 	if err != nil {
-		http.Error(w, "{id}: should be integer: not"+paths[3], http.StatusBadRequest)
-		log.Printf("ERROR: {id}: should be integer: not %s]\n", paths[3])
+		http.Error(w, "{id}: should be integer: not "+artistIDstr, http.StatusBadRequest)
+		log.Printf("ERROR: {id}: should be integer: not %s\n", artistIDstr)
 		return
 	}
 
@@ -142,13 +140,19 @@ func (s *httpServer) handleSongsByArtistID(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *httpServer) handleSongsByAlbum(w http.ResponseWriter, r *http.Request) {
-	paths := strings.Split(r.URL.Path, "/")
-	if len(paths) < 4 || paths[2] != "by-album" {
+	urlPrefix := "/by-album/"
+	if !strings.HasPrefix(r.URL.Path, urlPrefix) {
+		log.Printf("ERROR: prefix not found %s", urlPrefix)
+		http.NotFound(w, r)
+		return
+	}
+
+	albumName := strings.TrimPrefix(r.URL.Path, urlPrefix)
+	if albumName == "" || albumName == "/" {
 		http.Error(w, "Wrong get request: path should be /songs/by-album/{album name}", http.StatusBadRequest)
 		log.Printf("ERROR: Wrong get request: path should be /songs/by-album/{album name}")
 		return
 	}
-	albumName := paths[3]
 	songs, err := s.db.GetMusicsByAlbumName(albumName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -186,7 +190,7 @@ func (s *httpServer) handleSongDetails(w http.ResponseWriter, r *http.Request) {
 	songId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("can't convert %s to int", id), http.StatusBadRequest)
-		log.Panicf("ERROR: can't convert %s to int\n", id)
+		log.Printf("ERROR: can't convert %s to int\n", id)
 		return
 	}
 

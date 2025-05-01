@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"music-go/database"
 	"music-go/server"
 	"music-go/utils"
 	"os"
@@ -20,7 +21,14 @@ func main() {
 	// log.SetOutput(logFile)
 
 	cfg := utils.ReadConfig("config.json")
-	server := server.NewServer(*cfg)
+	db, err := database.OpenConnection(*cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	server, err := server.NewServer(*cfg, db)
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Fatal(server.Serve())
 }
 

@@ -1,5 +1,4 @@
 .vscode/
-temp/
 
 *.db
 log.txt

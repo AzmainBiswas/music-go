@@ -25,22 +25,24 @@ type DataBase struct {
 
 // open connection with the given database name.
 // close the database after use.
-func (d *DataBase) OpenConnection(config utils.Config) error {
-	d.config = config
-	path := path.Join(d.config.Database.Path, "music.db")
-	d.Location = fmt.Sprintf("file:%s", path)
+func OpenConnection(config utils.Config) (*DataBase, error) {
+	d := &DataBase{
+		config:   config,
+		Location: fmt.Sprintf("file:%s", path.Join(config.Database.Path, "music.db")),
+	}
+
 	var err error
 	d.DB, err = sql.Open("libsql", d.Location)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = d.DB.Ping()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return d, nil
 }
 
 func (d *DataBase) Close() error {
