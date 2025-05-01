@@ -12,18 +12,18 @@ const ConfigErrExitCode int = 2
 type LogDestination int
 
 const (
-	LogConsole LogDestination = iota
-	LogFile
-	LogBoth
+	LogToConsole LogDestination = iota
+	LogToFile
+	LogToBoth
 )
 
 func (ld LogDestination) MarshalJSON() ([]byte, error) {
 	switch ld {
-	case LogConsole:
+	case LogToConsole:
 		return json.Marshal("console")
-	case LogFile:
+	case LogToFile:
 		return json.Marshal("file")
-	case LogBoth:
+	case LogToBoth:
 		return json.Marshal("both")
 	default:
 		return nil, fmt.Errorf("Invalid LogDestination: %d", ld)
@@ -38,11 +38,11 @@ func (ld *LogDestination) UnmarshalJSON(data []byte) error {
 
 	switch s {
 	case "console":
-		*ld = LogConsole
+		*ld = LogToConsole
 	case "file":
-		*ld = LogFile
+		*ld = LogToFile
 	case "both":
-		*ld = LogBoth
+		*ld = LogToBoth
 	default:
 		return fmt.Errorf("invalid log destination: %s", s)
 	}
@@ -58,18 +58,18 @@ type Config struct {
 		Port uint64 `json:"port"`
 	} `json:"server"`
 	Log struct {
-		Enable bool           `json:"enable"`
-		LogDes LogDestination `json:"log_destination"` // 0 -> console, 1 -> log file, 2 -> both
+		Enable      bool           `json:"enable"`
+		Destination LogDestination `json:"destination"` // 0 -> console, 1 -> log file, 2 -> both
 	}
 }
 
-func NewDefaultConfig() *Config {
+func newDefaultConfig() *Config {
 	var defaultConfig *Config = &Config{}
 	defaultConfig.MusicDir = "~/Music"
 	defaultConfig.Database.Path = "./data"
 	defaultConfig.Server.Port = 6969
 	defaultConfig.Log.Enable = true
-	defaultConfig.Log.LogDes = LogBoth
+	defaultConfig.Log.Destination = LogToBoth
 
 	return defaultConfig
 }
@@ -82,7 +82,7 @@ func writeDefaultConfig(path string) {
 	}
 	defer file.Close()
 
-	var cfg = *NewDefaultConfig()
+	var cfg = *newDefaultConfig()
 	jsonBytes, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		fmt.Printf("ERROR: Coun't not convert struct to json: %s\n", err.Error())
@@ -96,7 +96,7 @@ func writeDefaultConfig(path string) {
 }
 
 func ReadConfig(path string) *Config {
-	var cfg *Config = NewDefaultConfig()
+	var cfg *Config = newDefaultConfig()
 	file, err := os.Open(path)
 	if os.IsNotExist(err) {
 		writeDefaultConfig(path)
@@ -115,7 +115,7 @@ func ReadConfig(path string) *Config {
 	if err := json.Unmarshal(buffer.Bytes(), cfg); err != nil {
 		fmt.Printf("ERROR: could't parse %s: %s\n", path, err.Error())
 		fmt.Println("ERROR: Using default config.")
-		return NewDefaultConfig()
+		return newDefaultConfig()
 	}
 
 	return cfg

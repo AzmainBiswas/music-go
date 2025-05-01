@@ -11,21 +11,18 @@ import (
 )
 
 func main() {
-	// set log flags
-	log.SetFlags(log.Lshortfile)
-	// logFile, err := os.OpenFile("log.txt", os.O_CREATE|os.O_WRONLY, 0644)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer logFile.Close()
-	// log.SetOutput(logFile)
-
 	cfg := utils.ReadConfig("config.json")
-	db, err := database.OpenConnection(*cfg)
+	logger, err := utils.NewCLogger(*cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	server, err := server.NewServer(*cfg, db)
+	defer logger.Close()
+
+	db, err := database.OpenConnection(*cfg, *logger)
+	if err != nil {
+		log.Fatal(err)
+	}
+	server, err := server.NewServer(*cfg, db, *logger)
 	if err != nil {
 		log.Fatal(err)
 	}

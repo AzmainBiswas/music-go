@@ -84,7 +84,7 @@ function playAll(type, value) {
 }
 
 function playNextSong() {
-  fetch("/next-song")
+  fetch("/get-next-song")
     .then((response) => response.json())
     .then((data) => playSongFromJsonResponce(data))
     .catch((err) => {

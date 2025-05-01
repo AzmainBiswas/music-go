@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"music-go/musictag"
 	"music-go/utils"
 	"os"
@@ -21,14 +20,16 @@ type DataBase struct {
 	config   utils.Config
 	DB       *sql.DB
 	Location string
+	logger   utils.CLogger
 }
 
 // open connection with the given database name.
 // close the database after use.
-func OpenConnection(config utils.Config) (*DataBase, error) {
+func OpenConnection(config utils.Config, logger utils.CLogger) (*DataBase, error) {
 	d := &DataBase{
 		config:   config,
 		Location: fmt.Sprintf("file:%s", path.Join(config.Database.Path, "music.db")),
+		logger:   logger,
 	}
 
 	var err error
@@ -149,7 +150,7 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 
 	defer func() {
 		if cerr := stmt.Close(); cerr != nil {
-			log.Println(cerr)
+			d.logger.Println(cerr)
 		}
 	}()
 
@@ -157,14 +158,14 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 	for _, mPath := range musicPaths {
 		file, err := os.Open(mPath)
 		if err != nil {
-			log.Println("ERROR: " + err.Error() + ": " + strings.TrimSpace(mPath))
+			d.logger.Println("ERROR: " + err.Error() + ": " + strings.TrimSpace(mPath))
 			continue
 		}
 		defer file.Close()
 
 		tag, err := musictag.ReadFrom(file)
 		if err != nil {
-			log.Printf("ERROR: failed to read the tag from %s: %v", mPath, err)
+			d.logger.Printf("ERROR: failed to read the tag from %s: %v", mPath, err)
 			continue
 		}
 
@@ -178,7 +179,7 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 		//TODOO: handel error
 		_, err = stmt.Exec(title, artistRaw, album, albumArtist, year, genre, mPath)
 		if err != nil {
-			log.Printf("ERROR: insert music: %v", err)
+			d.logger.Printf("ERROR: insert music: %v", err)
 			continue
 		}
 
@@ -188,9 +189,9 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 		if err != nil {
 			var ePath string
 			if err := tx.QueryRow(`SELECT music_location FROM musics WHERE title = ? AND artist = ? and album = ?`, title, artistRaw, album).Scan(&ePath); err == nil {
-				log.Printf("ERROR: \"%s\" is dublicate of \"%s\".\n", mPath, ePath)
+				d.logger.Printf("ERROR: \"%s\" is dublicate of \"%s\".\n", mPath, ePath)
 			} else {
-				log.Printf("ERROR: failed to retrieve music ID for %s: %v\n", mPath, err)
+				d.logger.Printf("ERROR: failed to retrieve music ID for %s: %v\n", mPath, err)
 			}
 			continue
 		}
@@ -213,22 +214,22 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 			if err == sql.ErrNoRows {
 				result, err := tx.Exec(`INSERT OR IGNORE INTO artists (name) VALUES (?)`, artist)
 				if err != nil {
-					log.Println("ERROR: insert artist:", err)
+					d.logger.Println("ERROR: insert artist:", err)
 					continue
 				}
 				lastID, err := result.LastInsertId()
 				if err != nil {
-					log.Println("ERROR: get artist ID:", err)
+					d.logger.Println("ERROR: get artist ID:", err)
 					continue
 				}
 				artistID = int(lastID)
 			} else if err != nil {
-				log.Printf("ERROR: quary failed for artist: %s : %v", artist, err)
+				d.logger.Printf("ERROR: quary failed for artist: %s : %v", artist, err)
 			}
 
 			_, err = tx.Exec(`INSERT OR IGNORE INTO music_artists (music_id, artist_id) VALUES (?, ?)`, musicID, artistID)
 			if err != nil {
-				log.Println("ERROR: insert into music_artists:", err)
+				d.logger.Println("ERROR: insert into music_artists:", err)
 			}
 		}
 	}
@@ -310,7 +311,7 @@ func (d *DataBase) GetAllMusics() ([]Music, error) {
 		var artistRaw string
 		err = rows.Scan(&m.Id, &m.Title, &artistRaw, &m.Album, &m.AlbumArtist, &m.Year, &m.Genre, &m.Path)
 		if err != nil {
-			log.Printf("ERROR: could not scan row: %v\n", err)
+			d.logger.Printf("ERROR: could not scan row: %v\n", err)
 			continue
 		}
 		m.Artists = artistSpLitter.Split(artistRaw, -1)
@@ -352,7 +353,7 @@ func (d *DataBase) GetAllMusicsByArtistID(artistID int64) ([]Music, error) {
 		var rawArtists string
 		err = rows.Scan(&m.Id, &m.Title, &rawArtists, &m.Album, &m.AlbumArtist, &m.Year, &m.Genre, &m.Path)
 		if err != nil {
-			log.Printf("ERROR: could not scan row: %v\n", err)
+			d.logger.Printf("ERROR: could not scan row: %v\n", err)
 			continue
 		}
 		m.Artists = artistSpLitter.Split(rawArtists, -1)
@@ -388,7 +389,7 @@ func (d *DataBase) GetMusicsByAlbumName(albumName string) ([]Music, error) {
 		var rawArtists string
 		err = rows.Scan(&m.Id, &m.Title, &rawArtists, &m.Album, &m.AlbumArtist, &m.Year, &m.Genre, &m.Path)
 		if err != nil {
-			log.Printf("ERROR: could not scan row: %v\n", err)
+			d.logger.Printf("ERROR: could not scan row: %v\n", err)
 			continue
 		}
 		m.Artists = artistSpLitter.Split(rawArtists, -1)
@@ -433,7 +434,7 @@ func (d *DataBase) GetAllAlbums() ([]Album, error) {
 		var a Album
 		err = rows.Scan(&a.Name, &a.Artist, &a.SongsCount)
 		if err != nil {
-			log.Printf("ERROR: could not scan row: %v\n", err)
+			d.logger.Printf("ERROR: could not scan row: %v\n", err)
 			continue
 		}
 
@@ -483,7 +484,7 @@ ORDER BY song_count DESC, artist_name`
 		var artist Artist
 		err = rows.Scan(&artist.ID, &artist.Name, &artist.SongsCount)
 		if err != nil {
-			log.Printf("ERROR: could not scan row: %v\n", err)
+			d.logger.Printf("ERROR: could not scan row: %v\n", err)
 			continue
 		}
 
