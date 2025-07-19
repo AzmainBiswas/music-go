@@ -22,6 +22,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+    defer db.Close()
+
+    // musics, err := FindAllFilesRecursively(os.Args[1])
+    // logger.Println(err)
+    // err = db.PushMusicsTOmusicsTable(musics)
+    // logger.Println(err)
+
 	server, err := server.NewServer(*cfg, db, *logger)
 	if err != nil {
 		log.Fatal(err)

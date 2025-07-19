@@ -1,5 +1,6 @@
 // global variables
 var songVolume = 1.0;
+var currentPlayingSongId = 0;
 
 function formatTime(totalSec) {
   var minutes = Math.floor(totalSec / 60);
@@ -17,7 +18,7 @@ function onAudioLoadMetadata(audio) {
   currentTime.innerHTML = `${formatTime(audio.currentTime)}`;
 }
 
-function playSong(musicPath) {
+function playSong(musicPath, id) {
   const audio = document.getElementById("audio");
   const source = document.getElementById("source");
 
@@ -26,6 +27,9 @@ function playSong(musicPath) {
     source.src = `/play?music-path=${encodeURIComponent(musicPath)}`;
     audio.load();
     document.getElementById("player").style.display = "flex";
+  }
+  if (id) {
+    currentPlayingSongId = id;
   }
 
   // Wait for the audio to be ready before playing
@@ -67,7 +71,7 @@ function playSongFromJsonResponce(data) {
     .then((response) => response.text())
     .then((html) => {
       document.getElementById("music-details").innerHTML = html;
-      playSong(nextSongPath);
+      playSong(nextSongPath, nextSongId);
     })
     .catch((err) => {
       console.error("ERROR: fetching:", err);
@@ -103,7 +107,7 @@ function playPreviousSong() {
         .then((response) => response.text())
         .then((html) => {
           document.getElementById("music-details").innerHTML = html;
-          playSong(prevSongPath);
+          playSong(prevSongPath, prevSongId);
         })
         .catch((err) => {
           console.error("ERROR: fetching:", err);

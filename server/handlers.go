@@ -13,9 +13,22 @@ import (
 	"strings"
 )
 
-//TODOOOO: add request check to all handeler
+// TODOOOO: add request check to all handeler
+func (s *httpServer) checkGET(w http.ResponseWriter, r *http.Request) bool {
+	if r.Method != http.MethodGet {
+		http.Error(w, fmt.Sprintf("ERROR: for \"%s\" Method not allowed, Only \"GET\" is allowed.", r.URL.String()), http.StatusBadRequest)
+		s.logger.Printf("ERROR: for \"%s\" Method not allowed, Only \"GET\" is allowed.", r.URL.String())
+		return false
+	}
+
+	return true
+}
 
 func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	err := s.indexTmpl.Execute(w, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -25,6 +38,10 @@ func (s *httpServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleSongs(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	musics, err := s.db.GetAllMusics()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -47,6 +64,10 @@ func (s *httpServer) handleSongs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleAlbums(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	albums, err := s.db.GetAllAlbums()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -69,6 +90,10 @@ func (s *httpServer) handleAlbums(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleArtists(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	artists, err := s.db.GetAllArtists()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -91,6 +116,10 @@ func (s *httpServer) handleArtists(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleSongsByArtistID(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	artistName := r.URL.Query().Get("name")
 	urlPrefix := "/by-artist-id/"
 	if !strings.HasPrefix(r.URL.Path, urlPrefix) {
@@ -139,6 +168,10 @@ func (s *httpServer) handleSongsByArtistID(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *httpServer) handleSongsByAlbum(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	urlPrefix := "/by-album/"
 	if !strings.HasPrefix(r.URL.Path, urlPrefix) {
 		s.logger.Printf("ERROR: prefix not found %s", urlPrefix)
@@ -179,6 +212,10 @@ func (s *httpServer) handleSongsByAlbum(w http.ResponseWriter, r *http.Request) 
 
 // TODOOO: send json to server and with js show it for multiple use or do some things
 func (s *httpServer) handleSongDetails(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	id := r.URL.Query().Get("id")
 	if id == "" {
 		http.Error(w, "url should be /song/details?id={{ .Id }} not "+r.URL.String(), http.StatusBadRequest)
@@ -219,6 +256,10 @@ func (s *httpServer) handleSongDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handleSongPlay(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	songPath := r.URL.Query().Get("music-path")
 
 	if songPath == "" {
@@ -244,10 +285,14 @@ func (s *httpServer) handleSongPlay(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate") // Minimize browser RAM
 
 	http.ServeFile(w, r, songPath)
-	s.logger.Printf("INFO: %s Song served sucessfuly.\n", songPath)
+	s.logger.Printf("INFO: \"%s\" Song served sucessfuly.\n", songPath)
 }
 
 func (s *httpServer) handleDisplayAlbumArt(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	songPath := r.URL.Query().Get("music-path")
 	songFile, err := os.Open(songPath)
 	if err != nil {
@@ -270,10 +315,14 @@ func (s *httpServer) handleDisplayAlbumArt(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate") // Minimize browser RAM
 
 	w.Write(albumArt.Data)
-	s.logger.Printf("INFO: album art for %s sucessfuly served.", songPath)
+	s.logger.Printf("INFO: album art for \"%s\" sucessfuly served.", songPath)
 }
 
 func (s *httpServer) handleGetNextSong(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	var (
 		song   *database.Music
 		err    error
@@ -325,6 +374,10 @@ func (s *httpServer) handleGetNextSong(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpServer) handlePreviousSong(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	if len(s.songsStack.array) < 2 {
 		http.Error(w, ErrEmptyStack.Error()+" This is first song.", http.StatusInternalServerError)
 		s.logger.Printf("ERROR: No previouly played song found %s\n", ErrEmptyStack.Error())
@@ -364,6 +417,10 @@ func (s *httpServer) handlePreviousSong(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *httpServer) handlePlayAll(w http.ResponseWriter, r *http.Request) {
+	if !s.checkGET(w, r) {
+		return
+	}
+
 	s.songQueue.Clear()
 
 	quaryType := r.URL.Query().Get("type")

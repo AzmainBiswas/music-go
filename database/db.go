@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"music-go/musictag"
 	"music-go/utils"
@@ -120,6 +121,122 @@ func defaultIfEmptyString(value string, defaultValue string) string {
 	return value
 }
 
+// extract details from music
+func (d *DataBase) extractMusicTag(musicPath string) (map[string]any, error) {
+	file, err := os.Open(musicPath)
+	if err != nil {
+		d.logger.Printf("ERROR: %s -> %s\n", err.Error(), musicPath)
+		return nil, err
+	}
+	defer file.Close()
+
+	tag, err := musictag.ReadFrom(file)
+	if err != nil {
+		d.logger.Printf("ERROR: failed to read the tag from %s: %v", musicPath, err)
+		return nil, err
+	}
+	var musicDetails = map[string]any{
+		"title":       defaultIfEmptyString(tag.GetTitle(), filepath.Base(musicPath)),
+		"album":       defaultIfEmptyString(tag.GetAlbum(), "Unknown"),
+		"artistRaw":   defaultIfEmptyString(tag.GetArtist(), "Unknown"),
+		"albumArtist": defaultIfEmptyString(tag.GetAlbumArtist(), "Unknown"),
+		"year":        tag.GetYear(),
+		"genre":       defaultIfEmptyString(tag.GetGenre(), "Unknown"),
+	}
+
+	return musicDetails, nil
+}
+
+// can be *sql.db or *sql.Tx
+type Queryer interface {
+	QueryRow(query string, args ...any) *sql.Row
+	Exec(query string, args ...any) (sql.Result, error)
+}
+
+// insert or get the artist id from database
+func (d *DataBase) insertOrGetArtistID(db Queryer, artist string) (int64, error) {
+	var artistID int64
+	err := db.QueryRow(`SELECT id FROM artists WHERE name = ?`, artist).Scan(&artistID)
+
+	if err == sql.ErrNoRows {
+		result, err := db.Exec(`INSERT OR IGNORE INTO artists (name) VALUES (?)`, artist)
+		if err != nil {
+			d.logger.Println("ERROR: unable to insert artist:", err)
+			return 0, nil
+		}
+
+		artistID, err = result.LastInsertId()
+		if err != nil {
+			d.logger.Println("ERROR: getting artist ID:", err)
+			return 0, nil
+		}
+	} else if err != nil {
+		d.logger.Printf("ERROR: quary failed for artist: %s : %v", artist, err)
+		return 0, nil
+	}
+
+	return artistID, nil
+}
+
+// Read and store to database single music
+func (d *DataBase) PushSingleMusicsToTable(musicPath string) error {
+	err := d.DB.Ping()
+	if err != nil {
+		if err := d.ReConnect(); err != nil {
+			return err
+		}
+	}
+
+	spLitter := regexp.MustCompile(`\s*(?:/|&|,)\s*`)
+
+	tag, err := d.extractMusicTag(musicPath)
+	if err != nil {
+		d.logger.Printf("ERROR: failed to read the tag from %s: %v", musicPath, err)
+		return err
+	}
+
+	result, err := d.DB.Exec("INSERT INTO musics(title, artist, album, album_artist, year, genre, music_location) VALUES( ?, ?, ?, ?, ?, ?, ? )", tag["title"], tag["artistRaw"], tag["album"], tag["albumArtist"], tag["year"], tag["genre"], musicPath)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			d.logger.Printf("INFO: music \"%s\" alrady exists :)\n", tag["title"].(string))
+			return nil
+		}
+		d.logger.Printf("ERROR: unable to insert music: %v", err)
+		return err
+	}
+
+	musicID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	if musicID == 0 {
+		return errors.New("Music may be exit or some other error have to check")
+	}
+
+	artistNames := spLitter.Split(tag["artistRaw"].(string), -1)
+	for _, artist := range artistNames {
+		artist = strings.TrimSpace(artist)
+		if artist == "" {
+			continue
+		}
+
+		artistID, err := d.insertOrGetArtistID(d.DB, artist)
+		if err != nil || artistID == 0 {
+			continue
+		}
+
+		_, err = d.DB.Exec(`INSERT OR IGNORE INTO music_artists (music_id, artist_id) VALUES (?, ?)`, musicID, artistID)
+		if err != nil {
+			d.logger.Println("ERROR: insert into music_artists:", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Read and store to database list of musics
 func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 	err := d.DB.Ping()
 	if err != nil {
@@ -143,7 +260,7 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 	}()
 
 	//TODOO: handel propery
-	stmt, err := tx.Prepare("INSERT OR IGNORE INTO musics(title, artist, album, album_artist, year, genre, music_location) VALUES( ?, ?, ?, ?, ?, ?, ? )")
+	stmt, err := tx.Prepare("INSERT INTO musics(title, artist, album, album_artist, year, genre, music_location) VALUES( ?, ?, ?, ?, ?, ?, ? )")
 	if err != nil {
 		return err
 	}
@@ -156,43 +273,28 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 
 	spLitter := regexp.MustCompile(`\s*(?:/|&|,)\s*`)
 	for _, mPath := range musicPaths {
-		file, err := os.Open(mPath)
-		if err != nil {
-			d.logger.Println("ERROR: " + err.Error() + ": " + strings.TrimSpace(mPath))
-			continue
-		}
-		defer file.Close()
-
-		tag, err := musictag.ReadFrom(file)
+		tag, err := d.extractMusicTag(mPath)
 		if err != nil {
 			d.logger.Printf("ERROR: failed to read the tag from %s: %v", mPath, err)
 			continue
 		}
 
-		title := defaultIfEmptyString(tag.GetTitle(), filepath.Base(mPath))
-		album := defaultIfEmptyString(tag.GetAlbum(), "Unknown")
-		artistRaw := defaultIfEmptyString(tag.GetArtist(), "Unknown")
-		albumArtist := defaultIfEmptyString(tag.GetAlbumArtist(), "Unknown")
-		year := tag.GetYear()
-		genre := defaultIfEmptyString(tag.GetGenre(), "Unknown")
-
 		//TODOO: handel error
-		_, err = stmt.Exec(title, artistRaw, album, albumArtist, year, genre, mPath)
+		result, err := stmt.Exec(tag["title"], tag["artistRaw"], tag["album"], tag["albumArtist"], tag["year"].(int), tag["genre"], mPath)
 		if err != nil {
-			d.logger.Printf("ERROR: insert music: %v", err)
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				d.logger.Printf("INFO: music \"%s\" alrady exists :)\n", tag["title"].(string))
+				continue
+			}
+			d.logger.Printf("ERROR: unable to insert music: %v", err)
 			continue
 		}
 
 		// Get the inserted music ID
-		var musicID int
-		err = tx.QueryRow(`SELECT id FROM musics WHERE music_location = ?`, mPath).Scan(&musicID)
+		musicID, err := result.LastInsertId()
+
 		if err != nil {
-			var ePath string
-			if err := tx.QueryRow(`SELECT music_location FROM musics WHERE title = ? AND artist = ? and album = ?`, title, artistRaw, album).Scan(&ePath); err == nil {
-				d.logger.Printf("ERROR: \"%s\" is dublicate of \"%s\".\n", mPath, ePath)
-			} else {
-				d.logger.Printf("ERROR: failed to retrieve music ID for %s: %v\n", mPath, err)
-			}
+			d.logger.Printf("ERROR: %s", err.Error())
 			continue
 		}
 
@@ -201,7 +303,7 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 		}
 
 		// Normalize artist(s) immediately
-		artistNames := spLitter.Split(artistRaw, -1)
+		artistNames := spLitter.Split(tag["artistRaw"].(string), -1)
 
 		for _, artist := range artistNames {
 			artist = strings.TrimSpace(artist)
@@ -209,22 +311,9 @@ func (d *DataBase) PushMusicsTOmusicsTable(musicPaths []string) error {
 				continue
 			}
 
-			var artistID int
-			err := tx.QueryRow(`SELECT id FROM artists WHERE name = ?`, artist).Scan(&artistID)
-			if err == sql.ErrNoRows {
-				result, err := tx.Exec(`INSERT OR IGNORE INTO artists (name) VALUES (?)`, artist)
-				if err != nil {
-					d.logger.Println("ERROR: insert artist:", err)
-					continue
-				}
-				lastID, err := result.LastInsertId()
-				if err != nil {
-					d.logger.Println("ERROR: get artist ID:", err)
-					continue
-				}
-				artistID = int(lastID)
-			} else if err != nil {
-				d.logger.Printf("ERROR: quary failed for artist: %s : %v", artist, err)
+			artistID, err := d.insertOrGetArtistID(d.DB, artist)
+			if err != nil || artistID == 0 {
+				continue
 			}
 
 			_, err = tx.Exec(`INSERT OR IGNORE INTO music_artists (music_id, artist_id) VALUES (?, ?)`, musicID, artistID)

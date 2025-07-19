@@ -51,156 +51,176 @@
             <div id="menu-result"></div>
 
             <div id="player">
-                <div id="music-details"></div>
+                <div class="left-elements">
+                    <div id="music-details"></div>
+                </div>
 
-                <div id="music-controlers">
-                    <div class="controls">
-                        <button class="control-btn" title="Shuffle">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                fill="none"
-                                stroke="gray"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                <div class="middle-elements">
+                    <div id="music-controlers">
+                        <div class="controls">
+                            <button class="control-btn" title="Shuffle">
+                                <svg
+                                    class="w-6 h-6 text-gray-800 dark:text-white"
+                                    aria-hidden="false"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    fill="none"
+                                    stroke="gray"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M13.484 9.166 15 7h5m0 0-3-3m3 3-3 3M4 17h4l1.577-2.253M4 7h4l7 10h5m0 0-3 3m3-3-3-3"
+                                    />
+                                </svg>
+                            </button>
+                            <button
+                                class="control-btn"
+                                title="Previous"
+                                onclick="playPreviousSong()"
                             >
-                                <polyline points="16 3 21 3 21 8"></polyline>
-                                <line x1="4" y1="20" x2="21" y2="3"></line>
-                                <polyline points="21 16 21 21 16 21"></polyline>
-                                <line x1="15" y1="15" x2="21" y2="21"></line>
-                                <line x1="4" y1="4" x2="9" y2="9"></line>
-                            </svg>
-                        </button>
-                        <button
-                            class="control-btn"
-                            title="Previous"
-                            onclick="playPreviousSong()"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                fill="none"
-                                stroke="gray"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    fill="none"
+                                    stroke="gray"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <polygon
+                                        points="19 20 9 12 19 4 19 20"
+                                    ></polygon>
+                                    <line x1="5" y1="19" x2="5" y2="5"></line>
+                                </svg>
+                            </button>
+                            <button
+                                class="control-btn"
+                                title="Play/Pause"
+                                onclick="togglePlay()"
                             >
-                                <polygon
-                                    points="19 20 9 12 19 4 19 20"
-                                ></polygon>
-                                <line x1="5" y1="19" x2="5" y2="5"></line>
-                            </svg>
-                        </button>
-                        <button
-                            class="control-btn"
-                            title="Play/Pause"
-                            onclick="togglePlay()"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="50"
-                                height="50"
-                                fill="white"
-                                viewBox="0 0 24 24"
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="50"
+                                    height="50"
+                                    fill="white"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        fill="white"
+                                    />
+                                    <polygon
+                                        points="10,8 16,12 10,16"
+                                        fill="black"
+                                    />
+                                </svg>
+                            </button>
+                            <button
+                                class="control-btn"
+                                title="Next"
+                                onclick="playNextSong()"
                             >
-                                <circle cx="12" cy="12" r="10" fill="white" />
-                                <polygon
-                                    points="10,8 16,12 10,16"
-                                    fill="black"
-                                />
-                            </svg>
-                        </button>
-                        <button
-                            class="control-btn"
-                            title="Next"
-                            onclick="playNextSong()"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                fill="none"
-                                stroke="gray"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    fill="none"
+                                    stroke="gray"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <polygon
+                                        points="5 4 15 12 5 20 5 4"
+                                    ></polygon>
+                                    <line x1="19" y1="5" x2="19" y2="19"></line>
+                                </svg>
+                            </button>
+                            <button
+                                class="control-btn"
+                                title="Loop"
+                                onclick="toggleLoop()"
                             >
-                                <polygon points="5 4 15 12 5 20 5 4"></polygon>
-                                <line x1="19" y1="5" x2="19" y2="19"></line>
-                            </svg>
-                        </button>
-                        <button
-                            class="control-btn"
-                            title="Loop"
-                            onclick="toggleLoop()"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="-1 -1 26 26"
-                                width="24"
-                                height="24"
-                                fill="none"
-                                stroke="gray"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <polyline points="17 1 21 5 17 9"></polyline>
-                                <path d="M3 11V9a4 4 0 014-4h14"></path>
-                                <polyline points="7 23 3 19 7 15"></polyline>
-                                <path d="M21 13v2a4 4 0 01-4 4H3"></path>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="progress-info">
-                        <div id="current-time">0:00</div>
-                        <div class="progress-bar">
-                            <input type="range" id="progress" value="0" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="-1 -1 26 26"
+                                    width="24"
+                                    height="24"
+                                    fill="none"
+                                    stroke="gray"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <polyline
+                                        points="17 1 21 5 17 9"
+                                    ></polyline>
+                                    <path d="M3 11V9a4 4 0 014-4h14"></path>
+                                    <polyline
+                                        points="7 23 3 19 7 15"
+                                    ></polyline>
+                                    <path d="M21 13v2a4 4 0 01-4 4H3"></path>
+                                </svg>
+                            </button>
                         </div>
-                        <div id="duration">0:00</div>
+
+                        <div class="progress-info">
+                            <div id="current-time">0:00</div>
+                            <div class="progress-bar">
+                                <input type="range" id="progress" value="0" />
+                            </div>
+                            <div id="duration">0:00</div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="volume-info">
-                    <input
-                        type="checkbox"
-                        id="mute-toggle"
-                        title="Mute / Unmute"
-                        onclick="toggleMute()"
-                        hidden
-                    />
-                    <label for="mute-toggle" id="mute-toggle-lable">
-                        <div class="mute-toggle-icon">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                fill="none"
-                                stroke="gray"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                viewBox="0 0 24 24"
-                            >
-                                <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-                                <path d="M15.54 8.46a5 5 0 010 7.07"></path>
-                                <path d="M19.07 4.93a9 9 0 010 12.73"></path>
-                            </svg>
-                        </div>
-                    </label>
-                    <input
-                        type="range"
-                        id="volume-bar"
-                        min="0"
-                        max="100"
-                        value="100"
-                        onchange="adjustVolume(this.value)"
-                    />
-                    <div id="volume-value">100%</div>
+                <div class="right-elements">
+                    <div id="volume-info">
+                        <input
+                            type="checkbox"
+                            id="mute-toggle"
+                            title="Mute / Unmute"
+                            onclick="toggleMute()"
+                            hidden
+                        />
+                        <label for="mute-toggle" id="mute-toggle-lable">
+                            <div class="mute-toggle-icon">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    fill="none"
+                                    stroke="gray"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                                    <path d="M15.54 8.46a5 5 0 010 7.07"></path>
+                                    <path
+                                        d="M19.07 4.93a9 9 0 010 12.73"
+                                    ></path>
+                                </svg>
+                            </div>
+                        </label>
+                        <input
+                            type="range"
+                            id="volume-bar"
+                            min="0"
+                            max="100"
+                            value="100"
+                            onchange="adjustVolume(this.value)"
+                        />
+                        <div id="volume-value">100%</div>
+                    </div>
                 </div>
             </div>
 
@@ -217,15 +237,21 @@
                 const volumeBar = document.getElementById("volume-bar");
 
                 document.addEventListener("keydown", (event) => {
-                    event.preventDefault();
                     if (event.key === " ") {
+                        event.preventDefault();
                         togglePlay();
                     }
-                    if (event.key === "n" && event.shiftKey) {
-                        playNextSong();
-                    }
-                    if (event.key === "p" && event.shiftKey) {
-                        playPreviousSong();
+                    // if (event.key === "n" && event.shiftKey) {
+                    //     event.preventDefault();
+                    //     playNextSong();
+                    // }
+                    // if (event.key === "p" && event.shiftKey) {
+                    //     event.preventDefault();
+                    //     playPreviousSong();
+                    // }
+                    if (event.key === "r" && event.ctrlKey) {
+                        event.preventDefault();
+                        window.location.reload(true);
                     }
                 });
 

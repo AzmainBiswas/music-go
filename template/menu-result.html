@@ -7,7 +7,7 @@
         hx-target="#music-details"
         hx-swap="innerHTML"
         hx-trigger="click"
-        onclick="playSong('{{ .Path }}')"
+        onclick="playSong('{{ .Path }}', {{ .Id }})"
     >
         {{ .Title }}
     </div>
